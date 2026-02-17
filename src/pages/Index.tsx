@@ -34,6 +34,9 @@ const Index = () => {
 
   // Form state
   const [gpa, setGpa] = useState("");
+  const [specialization, setSpecialization] = useState("");
+  const [credits, setCredits] = useState("");
+  const [gradePoints, setGradePoints] = useState("");
   const [faculty, setFaculty] = useState("");
   const [strongSubjects, setStrongSubjects] = useState("");
   const [weakSubjects, setWeakSubjects] = useState("");
@@ -52,11 +55,11 @@ const Index = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!gpa || !faculty || !strongSubjects || !weakSubjects || !careerInterest || !difficulty) {
+    if (!gpa || !faculty || !strongSubjects || !weakSubjects || !careerInterest || !difficulty || !specialization || !credits || !gradePoints) {
       return;
     }
 
-    const profileSummary = `📋 **My Profile:**\n- GPA: ${gpa}\n- Faculty: ${faculty}\n- Strong Subjects: ${strongSubjects}\n- Weak Subjects: ${weakSubjects}\n- Career Interest: ${careerInterest}\n- Preferred Difficulty: ${difficulty}`;
+    const profileSummary = `📋 **My Profile:**\n- Specialization: ${specialization}\n- Cumulative GPA: ${gpa}\n- Cumulative Credits: ${credits}\n- Cumulative Grade Points: ${gradePoints}\n- Faculty: ${faculty}\n- Strong Subjects: ${strongSubjects}\n- Weak Subjects: ${weakSubjects}\n- Career Interest: ${careerInterest}\n- Preferred Difficulty: ${difficulty}`;
 
     const studentMsg: ChatMessage = {
       role: "student",
@@ -70,14 +73,16 @@ const Index = () => {
     const payload = {
       gpa: parseFloat(gpa),
       faculty,
-      strong_subjects: strongSubjects,
-      weak_subjects: weakSubjects,
-      career_interest: careerInterest,
-      preferred_difficulty: difficulty,
+      strong: strongSubjects,
+      weak: weakSubjects,
+      career: careerInterest,
+      specialization,
+      credits,
+      gradePoints
     };
 
     try {
-      const res = await fetch("/recommend", {
+      const res = await fetch("/api/recommend", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -88,7 +93,7 @@ const Index = () => {
       const data = await res.json();
       setMessages((prev) => [
         ...prev,
-        { role: "ai", content: data.recommendation || data.message || JSON.stringify(data), timestamp: new Date() },
+        { role: "ai", content: data.answer || "No recommendation received.", timestamp: new Date() },
       ]);
     } catch {
       // Mock response when API is unavailable
@@ -122,7 +127,7 @@ const Index = () => {
       <div className="absolute inset-0 bg-foreground/60" />
 
       {/* Navbar */}
-      <nav className="relative z-10 flex items-center gap-3 px-4 sm:px-8 py-3 bg-glass/10 backdrop-blur-md border-b border-glass/20">
+      <nav className="relative z-10 flex items-center gap-3 px-4 sm:px-8 py-3 bg-white/10 backdrop-blur-md border-b border-white/20">
         <img src={sliitLogo} alt="SLIIT Logo" className="h-10 w-10 object-contain rounded" />
         <h1 className="text-primary-foreground font-bold text-base sm:text-lg tracking-tight">
           SLIIT AI Academic & Elective Advisor
@@ -131,9 +136,9 @@ const Index = () => {
 
       {/* Main content */}
       <main className="relative z-10 flex-1 flex items-start justify-center p-3 sm:p-6 overflow-auto">
-        <div className="w-full max-w-3xl bg-glass/15 backdrop-blur-xl rounded-2xl border border-glass/25 shadow-2xl flex flex-col max-h-[calc(100vh-120px)]">
+        <div className="w-full max-w-3xl bg-white/15 backdrop-blur-xl rounded-2xl border border-white/25 shadow-2xl flex flex-col max-h-[calc(100vh-120px)]">
           {/* Form section */}
-          <form onSubmit={handleSubmit} className="p-4 sm:p-6 border-b border-glass/20">
+          <form onSubmit={handleSubmit} className="p-4 sm:p-6 border-b border-white/20">
             <div className="flex items-center gap-2 mb-4">
               <GraduationCap className="h-5 w-5 text-primary-foreground" />
               <h2 className="text-primary-foreground font-semibold text-sm sm:text-base">Student Profile</h2>
@@ -141,16 +146,61 @@ const Index = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <div className="space-y-1">
-                <Label className="text-primary-foreground/80 text-xs">GPA</Label>
+                <Label className="text-primary-foreground/80 text-xs">Specialization</Label>
+                <Select value={specialization} onValueChange={setSpecialization} required>
+                  <SelectTrigger className="bg-white/20 border-white/30 text-primary-foreground h-9 text-sm">
+                    <SelectValue placeholder="Select specialization" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover">
+                    <SelectItem value="IT">Information Technology (IT)</SelectItem>
+                    <SelectItem value="SE">Software Engineering (SE)</SelectItem>
+                    <SelectItem value="DS">Data Science (DS)</SelectItem>
+                    <SelectItem value="ISE">Information Systems Engineering (ISE)</SelectItem>
+                    <SelectItem value="CS">Cyber Security (CS)</SelectItem>
+                    <SelectItem value="IM">Interactive Media (IM)</SelectItem>
+                    <SelectItem value="CSNE">Computer Systems & Network Engineering (CSNE)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-primary-foreground/80 text-xs">Cumulative GPA</Label>
                 <Input
                   type="number"
                   step="0.01"
                   min="0"
                   max="4"
-                  placeholder="e.g. 3.45"
+                  placeholder="e.g. 3.77"
                   value={gpa}
                   onChange={(e) => setGpa(e.target.value)}
-                  className="bg-glass/20 border-glass/30 text-primary-foreground placeholder:text-primary-foreground/40 h-9 text-sm"
+                  className="bg-white/20 border-white/30 text-primary-foreground placeholder:text-primary-foreground/40 h-9 text-sm"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-primary-foreground/80 text-xs">Cumulative Credits</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  placeholder="e.g. 84"
+                  value={credits}
+                  onChange={(e) => setCredits(e.target.value)}
+                  className="bg-white/20 border-white/30 text-primary-foreground placeholder:text-primary-foreground/40 h-9 text-sm"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-primary-foreground/80 text-xs">Cumulative Grade Points</Label>
+                <Input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  placeholder="e.g. 316.4"
+                  value={gradePoints}
+                  onChange={(e) => setGradePoints(e.target.value)}
+                  className="bg-white/20 border-white/30 text-primary-foreground placeholder:text-primary-foreground/40 h-9 text-sm"
                   required
                 />
               </div>
@@ -158,7 +208,7 @@ const Index = () => {
               <div className="space-y-1">
                 <Label className="text-primary-foreground/80 text-xs">Faculty</Label>
                 <Select value={faculty} onValueChange={setFaculty} required>
-                  <SelectTrigger className="bg-glass/20 border-glass/30 text-primary-foreground h-9 text-sm">
+                  <SelectTrigger className="bg-white/20 border-white/30 text-primary-foreground h-9 text-sm">
                     <SelectValue placeholder="Select faculty" />
                   </SelectTrigger>
                   <SelectContent className="bg-popover">
@@ -172,7 +222,7 @@ const Index = () => {
               <div className="space-y-1">
                 <Label className="text-primary-foreground/80 text-xs">Career Interest</Label>
                 <Select value={careerInterest} onValueChange={setCareerInterest} required>
-                  <SelectTrigger className="bg-glass/20 border-glass/30 text-primary-foreground h-9 text-sm">
+                  <SelectTrigger className="bg-white/20 border-white/30 text-primary-foreground h-9 text-sm">
                     <SelectValue placeholder="Select interest" />
                   </SelectTrigger>
                   <SelectContent className="bg-popover">
@@ -192,7 +242,7 @@ const Index = () => {
                   placeholder="e.g. Math, OOP"
                   value={strongSubjects}
                   onChange={(e) => setStrongSubjects(e.target.value)}
-                  className="bg-glass/20 border-glass/30 text-primary-foreground placeholder:text-primary-foreground/40 h-9 text-sm"
+                  className="bg-white/20 border-white/30 text-primary-foreground placeholder:text-primary-foreground/40 h-9 text-sm"
                   required
                 />
               </div>
@@ -203,7 +253,7 @@ const Index = () => {
                   placeholder="e.g. Statistics"
                   value={weakSubjects}
                   onChange={(e) => setWeakSubjects(e.target.value)}
-                  className="bg-glass/20 border-glass/30 text-primary-foreground placeholder:text-primary-foreground/40 h-9 text-sm"
+                  className="bg-white/20 border-white/30 text-primary-foreground placeholder:text-primary-foreground/40 h-9 text-sm"
                   required
                 />
               </div>
@@ -211,7 +261,7 @@ const Index = () => {
               <div className="space-y-1">
                 <Label className="text-primary-foreground/80 text-xs">Preferred Difficulty</Label>
                 <Select value={difficulty} onValueChange={setDifficulty} required>
-                  <SelectTrigger className="bg-glass/20 border-glass/30 text-primary-foreground h-9 text-sm">
+                  <SelectTrigger className="bg-white/20 border-white/30 text-primary-foreground h-9 text-sm">
                     <SelectValue placeholder="Select level" />
                   </SelectTrigger>
                   <SelectContent className="bg-popover">
@@ -243,27 +293,25 @@ const Index = () => {
           </form>
 
           {/* Chat section */}
-          <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 min-h-[200px] max-h-[400px]">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 min-h-[200px]">
             {messages.map((msg, i) => (
               <div
                 key={i}
                 className={`flex ${msg.role === "student" ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-md ${
-                    msg.role === "student"
-                      ? "bg-navy text-navy-foreground rounded-br-md"
-                      : "bg-glass/80 backdrop-blur-sm text-foreground border border-glass/30 rounded-bl-md"
-                  }`}
+                  className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-md ${msg.role === "student"
+                    ? "bg-navy text-navy-foreground rounded-br-md"
+                    : "bg-white/80 backdrop-blur-sm text-foreground border border-white/30 rounded-bl-md"
+                    }`}
                 >
                   <div
                     dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }}
                     className="leading-relaxed [&_ul]:mt-1 [&_li]:ml-2"
                   />
                   <p
-                    className={`text-[10px] mt-2 ${
-                      msg.role === "student" ? "text-navy-foreground/60" : "text-muted-foreground"
-                    }`}
+                    className={`text-[10px] mt-2 ${msg.role === "student" ? "text-navy-foreground/60" : "text-muted-foreground"
+                      }`}
                   >
                     {formatTime(msg.timestamp)}
                   </p>
@@ -273,7 +321,7 @@ const Index = () => {
 
             {loading && (
               <div className="flex justify-start">
-                <div className="bg-glass/80 backdrop-blur-sm rounded-2xl rounded-bl-md px-4 py-3 border border-glass/30 shadow-md">
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl rounded-bl-md px-4 py-3 border border-white/30 shadow-md">
                   <div className="flex items-center gap-2 text-muted-foreground text-sm">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Thinking...
