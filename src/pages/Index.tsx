@@ -23,7 +23,7 @@ interface ChatMessage {
 const WELCOME_MESSAGE: ChatMessage = {
   role: "ai",
   content:
-    "👋 Welcome to the SLIIT AI Academic & Elective Advisor! Fill in your academic profile above and click **Get Recommendation** to receive personalized elective and academic guidance.",
+    "👋 Welcome to the SLIIT AI Academic & Elective Advisor for year 4 semester 1! Fill in your academic profile above and click **Get Recommendation** to receive personalized elective and academic guidance.",
   timestamp: new Date(),
 };
 
@@ -42,6 +42,7 @@ const Index = () => {
   const [weakSubjects, setWeakSubjects] = useState("");
   const [careerInterest, setCareerInterest] = useState("");
   const [difficulty, setDifficulty] = useState("");
+  const [language, setLanguage] = useState("English");
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -55,11 +56,11 @@ const Index = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!gpa || !faculty || !strongSubjects || !weakSubjects || !careerInterest || !difficulty || !specialization || !credits || !gradePoints) {
+    if (!gpa || !faculty || !strongSubjects || !weakSubjects || !careerInterest || !difficulty || !specialization || !credits || !gradePoints || !language) {
       return;
     }
 
-    const profileSummary = `📋 **My Profile:**\n- Specialization: ${specialization}\n- Cumulative GPA: ${gpa}\n- Cumulative Credits: ${credits}\n- Cumulative Grade Points: ${gradePoints}\n- Faculty: ${faculty}\n- Strong Subjects: ${strongSubjects}\n- Weak Subjects: ${weakSubjects}\n- Career Interest: ${careerInterest}\n- Preferred Difficulty: ${difficulty}`;
+    const profileSummary = `📋 **My Profile:**\n- Specialization: ${specialization}\n- Cumulative GPA: ${gpa}\n- Cumulative Credits: ${credits}\n- Cumulative Grade Points: ${gradePoints}\n- Faculty: ${faculty}\n- Strong Subjects: ${strongSubjects}\n- Weak Subjects: ${weakSubjects}\n- Career Interest: ${careerInterest}\n- Preferred Difficulty: ${difficulty}\n- Preferred Language: ${language}`;
 
     const studentMsg: ChatMessage = {
       role: "student",
@@ -78,7 +79,8 @@ const Index = () => {
       career: careerInterest,
       specialization,
       credits,
-      gradePoints
+      gradePoints,
+      language
     };
 
     try {
@@ -130,21 +132,21 @@ const Index = () => {
       <nav className="relative z-10 flex items-center gap-3 px-4 sm:px-8 py-3 bg-white/10 backdrop-blur-md border-b border-white/20">
         <img src={sliitLogo} alt="SLIIT Logo" className="h-10 w-10 object-contain rounded" />
         <h1 className="text-primary-foreground font-bold text-base sm:text-lg tracking-tight">
-          SLIIT AI Academic & Elective Advisor
+          SLIIT AI Academic & Elective Advisor for year 4 semester 1
         </h1>
       </nav>
 
       {/* Main content */}
       <main className="relative z-10 flex-1 flex items-start justify-center p-3 sm:p-6 overflow-auto">
-        <div className="w-full max-w-3xl bg-white/15 backdrop-blur-xl rounded-2xl border border-white/25 shadow-2xl flex flex-col max-h-[calc(100vh-120px)]">
+        <div className="w-full max-w-6xl bg-white/15 backdrop-blur-xl rounded-2xl border border-white/25 shadow-2xl flex flex-col lg:flex-row max-h-[calc(100vh-120px)] overflow-hidden">
           {/* Form section */}
-          <form onSubmit={handleSubmit} className="p-4 sm:p-6 border-b border-white/20">
+          <form onSubmit={handleSubmit} className="p-4 sm:p-6 border-b lg:border-b-0 lg:border-r border-white/20 lg:w-[400px] flex-shrink-0 overflow-y-auto">
             <div className="flex items-center gap-2 mb-4">
               <GraduationCap className="h-5 w-5 text-primary-foreground" />
               <h2 className="text-primary-foreground font-semibold text-sm sm:text-base">Student Profile</h2>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
               <div className="space-y-1">
                 <Label className="text-primary-foreground/80 text-xs">Specialization</Label>
                 <Select value={specialization} onValueChange={setSpecialization} required>
@@ -268,6 +270,20 @@ const Index = () => {
                     <SelectItem value="Low">Low</SelectItem>
                     <SelectItem value="Moderate">Moderate</SelectItem>
                     <SelectItem value="High">High</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-primary-foreground/80 text-xs">Preferred Output Language</Label>
+                <Select value={language} onValueChange={setLanguage} required>
+                  <SelectTrigger className="bg-white/20 border-white/30 text-primary-foreground h-9 text-sm">
+                    <SelectValue placeholder="Select language" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover">
+                    <SelectItem value="English">English</SelectItem>
+                    <SelectItem value="Sinhala">Sinhala</SelectItem>
+                    <SelectItem value="Tamil">Tamil</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
