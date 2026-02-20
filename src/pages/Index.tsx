@@ -17,7 +17,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 
-const profileSchema = z.object({
+export const profileSchema = z.object({
   specialization: z.string().min(1, "Specialization is required"),
   gpa: z.string().refine((val) => {
     const num = parseFloat(val);
@@ -52,6 +52,16 @@ const WELCOME_MESSAGE: ChatMessage = {
   content:
     "👋 Welcome to the SLIIT AI Academic & Elective Advisor for year 4 semester 1! Fill in your academic profile above and click **Get Recommendation** to receive personalized elective and academic guidance.",
   timestamp: new Date(),
+};
+
+export const renderMarkdown = (text: string) => {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*(.*?)\*/g, "<em>$1</em>")
+    .replace(/^- (.*)/gm, "<li>$1</li>")
+    .replace(/(<li>.*<\/li>)/s, "<ul class='list-disc pl-4 space-y-1'>$1</ul>")
+    .replace(/^> (.*)/gm, "<blockquote class='border-l-2 border-navy-light pl-3 italic opacity-80'>$1</blockquote>")
+    .replace(/\n/g, "<br/>");
 };
 
 const Index = () => {
@@ -160,15 +170,7 @@ const Index = () => {
     }
   };
 
-  const renderMarkdown = (text: string) => {
-    return text
-      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-      .replace(/\*(.*?)\*/g, "<em>$1</em>")
-      .replace(/^- (.*)/gm, "<li>$1</li>")
-      .replace(/(<li>.*<\/li>)/s, "<ul class='list-disc pl-4 space-y-1'>$1</ul>")
-      .replace(/^> (.*)/gm, "<blockquote class='border-l-2 border-navy-light pl-3 italic opacity-80'>$1</blockquote>")
-      .replace(/\n/g, "<br/>");
-  };
+  // Placeholder for where it was
 
   return (
     <div
