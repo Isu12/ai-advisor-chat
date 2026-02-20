@@ -10,9 +10,36 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Loader2, GraduationCap } from "lucide-react";
+import { Send, Loader2, GraduationCap, AlertCircle } from "lucide-react";
 import campusBg from "@/assets/sliit-campus.jpg";
 import sliitLogo from "@/assets/sliit-logo.png";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+
+const profileSchema = z.object({
+  specialization: z.string().min(1, "Specialization is required"),
+  gpa: z.string().refine((val) => {
+    const num = parseFloat(val);
+    return !isNaN(num) && num >= 0 && num <= 4.0;
+  }, { message: "GPA must be between 0 and 4.0" }),
+  credits: z.string().refine((val) => {
+    const num = parseInt(val);
+    return !isNaN(num) && num > 0;
+  }, { message: "Credits must be a positive number" }),
+  gradePoints: z.string().refine((val) => {
+    const num = parseFloat(val);
+    return !isNaN(num) && num >= 0;
+  }, { message: "Grade points must be a non-negative number" }),
+  faculty: z.string().min(1, "Faculty is required"),
+  careerInterest: z.string().min(1, "Career interest is required"),
+  strongSubjects: z.string().min(1, "Strong subjects are required"),
+  weakSubjects: z.string().min(1, "Weak subjects are required"),
+  difficulty: z.string().min(1, "Preferred difficulty is required"),
+  language: z.string().min(1, "Preferred language is required"),
+});
+
+type ProfileFormValues = z.infer<typeof profileSchema>;
 
 interface ChatMessage {
   role: "student" | "ai";
@@ -32,17 +59,28 @@ const Index = () => {
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Form state
-  const [gpa, setGpa] = useState("");
-  const [specialization, setSpecialization] = useState("");
-  const [credits, setCredits] = useState("");
-  const [gradePoints, setGradePoints] = useState("");
-  const [faculty, setFaculty] = useState("");
-  const [strongSubjects, setStrongSubjects] = useState("");
-  const [weakSubjects, setWeakSubjects] = useState("");
-  const [careerInterest, setCareerInterest] = useState("");
-  const [difficulty, setDifficulty] = useState("");
-  const [language, setLanguage] = useState("English");
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors },
+    reset,
+  } = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileSchema),
+    mode: "onChange",
+    defaultValues: {
+      specialization: "",
+      gpa: "",
+      credits: "",
+      gradePoints: "",
+      faculty: "",
+      careerInterest: "",
+      strongSubjects: "",
+      weakSubjects: "",
+      difficulty: "",
+      language: "English",
+    },
+  });
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -53,12 +91,19 @@ const Index = () => {
   const formatTime = (date: Date) =>
     date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!gpa || !faculty || !strongSubjects || !weakSubjects || !careerInterest || !difficulty || !specialization || !credits || !gradePoints || !language) {
-      return;
-    }
+  const onSubmit = async (values: ProfileFormValues) => {
+    const {
+      gpa,
+      faculty,
+      strongSubjects,
+      weakSubjects,
+      careerInterest,
+      specialization,
+      credits,
+      gradePoints,
+      language,
+      difficulty,
+    } = values;
 
     const profileSummary = `📋 **My Profile:**\n- Specialization: ${specialization}\n- Cumulative GPA: ${gpa}\n- Cumulative Credits: ${credits}\n- Cumulative Grade Points: ${gradePoints}\n- Faculty: ${faculty}\n- Strong Subjects: ${strongSubjects}\n- Weak Subjects: ${weakSubjects}\n- Career Interest: ${careerInterest}\n- Preferred Difficulty: ${difficulty}\n- Preferred Language: ${language}`;
 
@@ -80,7 +125,7 @@ const Index = () => {
       specialization,
       credits,
       gradePoints,
-      language
+      language,
     };
 
     try {
@@ -96,7 +141,11 @@ const Index = () => {
       const data = await res.json();
       setMessages((prev) => [
         ...prev,
-        { role: "ai", content: data.answer || "No recommendation received.", timestamp: new Date() },
+        {
+          role: "ai",
+          content: data.answer || "No recommendation received.",
+          timestamp: new Date(),
+        },
       ]);
     } catch {
       // Mock response when API is unavailable
@@ -141,152 +190,273 @@ const Index = () => {
       <main className="relative z-10 flex-1 flex items-start justify-center p-3 sm:p-6 overflow-auto">
         <div className="w-full max-w-6xl bg-white/15 backdrop-blur-xl rounded-2xl border border-white/25 shadow-2xl flex flex-col lg:flex-row max-h-[calc(100vh-120px)] overflow-hidden">
           {/* Form section */}
-          <form onSubmit={handleSubmit} className="p-4 sm:p-6 border-b lg:border-b-0 lg:border-r border-white/20 lg:w-[400px] flex-shrink-0 overflow-y-auto">
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="p-4 sm:p-6 border-b lg:border-b-0 lg:border-r border-white/20 lg:w-[400px] flex-shrink-0 overflow-y-auto"
+          >
             <div className="flex items-center gap-2 mb-4">
               <GraduationCap className="h-5 w-5 text-primary-foreground" />
-              <h2 className="text-primary-foreground font-semibold text-sm sm:text-base">Student Profile</h2>
+              <h2 className="text-primary-foreground font-semibold text-sm sm:text-base">
+                Student Profile
+              </h2>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
               <div className="space-y-1">
-                <Label className="text-primary-foreground/80 text-xs">Specialization</Label>
-                <Select value={specialization} onValueChange={setSpecialization} required>
-                  <SelectTrigger className="bg-white/20 border-white/30 text-primary-foreground h-9 text-sm">
-                    <SelectValue placeholder="Select specialization" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover">
-                    <SelectItem value="IT">Information Technology (IT)</SelectItem>
-                    <SelectItem value="SE">Software Engineering (SE)</SelectItem>
-                    <SelectItem value="DS">Data Science (DS)</SelectItem>
-                    <SelectItem value="ISE">Information Systems Engineering (ISE)</SelectItem>
-                    <SelectItem value="CS">Cyber Security (CS)</SelectItem>
-                    <SelectItem value="IM">Interactive Media (IM)</SelectItem>
-                    <SelectItem value="CSNE">Computer Systems & Network Engineering (CSNE)</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label className="text-primary-foreground/80 text-xs">
+                  Specialization
+                </Label>
+                <Controller
+                  name="specialization"
+                  control={control}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger
+                        className={`bg-white/20 border-white/30 text-primary-foreground h-9 text-sm ${errors.specialization ? "border-red-500" : ""
+                          }`}
+                      >
+                        <SelectValue placeholder="Select specialization" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover">
+                        <SelectItem value="IT">Information Technology (IT)</SelectItem>
+                        <SelectItem value="SE">Software Engineering (SE)</SelectItem>
+                        <SelectItem value="DS">Data Science (DS)</SelectItem>
+                        <SelectItem value="ISE">Information Systems Engineering (ISE)</SelectItem>
+                        <SelectItem value="CS">Cyber Security (CS)</SelectItem>
+                        <SelectItem value="IM">Interactive Media (IM)</SelectItem>
+                        <SelectItem value="CSNE">
+                          Computer Systems & Network Engineering (CSNE)
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.specialization && (
+                  <p className="text-red-400 text-[10px] mt-0.5 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {errors.specialization.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-1">
-                <Label className="text-primary-foreground/80 text-xs">Cumulative GPA</Label>
+                <Label className="text-primary-foreground/80 text-xs">
+                  Cumulative GPA
+                </Label>
                 <Input
                   type="number"
                   step="0.01"
-                  min="0"
-                  max="4"
                   placeholder="e.g. 3.77"
-                  value={gpa}
-                  onChange={(e) => setGpa(e.target.value)}
-                  className="bg-white/20 border-white/30 text-primary-foreground placeholder:text-primary-foreground/40 h-9 text-sm"
-                  required
+                  {...register("gpa")}
+                  className={`bg-white/20 border-white/30 text-primary-foreground placeholder:text-primary-foreground/40 h-9 text-sm ${errors.gpa ? "border-red-500" : ""
+                    }`}
                 />
+                {errors.gpa && (
+                  <p className="text-red-400 text-[10px] mt-0.5 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {errors.gpa.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-1">
-                <Label className="text-primary-foreground/80 text-xs">Cumulative Credits</Label>
+                <Label className="text-primary-foreground/80 text-xs">
+                  Cumulative Credits
+                </Label>
                 <Input
                   type="number"
-                  min="0"
                   placeholder="e.g. 84"
-                  value={credits}
-                  onChange={(e) => setCredits(e.target.value)}
-                  className="bg-white/20 border-white/30 text-primary-foreground placeholder:text-primary-foreground/40 h-9 text-sm"
-                  required
+                  {...register("credits")}
+                  className={`bg-white/20 border-white/30 text-primary-foreground placeholder:text-primary-foreground/40 h-9 text-sm ${errors.credits ? "border-red-500" : ""
+                    }`}
                 />
+                {errors.credits && (
+                  <p className="text-red-400 text-[10px] mt-0.5 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {errors.credits.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-1">
-                <Label className="text-primary-foreground/80 text-xs">Cumulative Grade Points</Label>
+                <Label className="text-primary-foreground/80 text-xs">
+                  Cumulative Grade Points
+                </Label>
                 <Input
                   type="number"
                   step="0.1"
-                  min="0"
                   placeholder="e.g. 316.4"
-                  value={gradePoints}
-                  onChange={(e) => setGradePoints(e.target.value)}
-                  className="bg-white/20 border-white/30 text-primary-foreground placeholder:text-primary-foreground/40 h-9 text-sm"
-                  required
+                  {...register("gradePoints")}
+                  className={`bg-white/20 border-white/30 text-primary-foreground placeholder:text-primary-foreground/40 h-9 text-sm ${errors.gradePoints ? "border-red-500" : ""
+                    }`}
                 />
+                {errors.gradePoints && (
+                  <p className="text-red-400 text-[10px] mt-0.5 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {errors.gradePoints.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-1">
                 <Label className="text-primary-foreground/80 text-xs">Faculty</Label>
-                <Select value={faculty} onValueChange={setFaculty} required>
-                  <SelectTrigger className="bg-white/20 border-white/30 text-primary-foreground h-9 text-sm">
-                    <SelectValue placeholder="Select faculty" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover">
-                    <SelectItem value="Faculty of Computing">Faculty of Computing</SelectItem>
-                    <SelectItem value="Faculty of Engineering">Faculty of Engineering</SelectItem>
-                    <SelectItem value="Faculty of Business">Faculty of Business</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Controller
+                  name="faculty"
+                  control={control}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger
+                        className={`bg-white/20 border-white/30 text-primary-foreground h-9 text-sm ${errors.faculty ? "border-red-500" : ""
+                          }`}
+                      >
+                        <SelectValue placeholder="Select faculty" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover">
+                        <SelectItem value="Faculty of Computing">Faculty of Computing</SelectItem>
+                        <SelectItem value="Faculty of Engineering">Faculty of Engineering</SelectItem>
+                        <SelectItem value="Faculty of Business">Faculty of Business</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.faculty && (
+                  <p className="text-red-400 text-[10px] mt-0.5 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {errors.faculty.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-1">
-                <Label className="text-primary-foreground/80 text-xs">Career Interest</Label>
-                <Select value={careerInterest} onValueChange={setCareerInterest} required>
-                  <SelectTrigger className="bg-white/20 border-white/30 text-primary-foreground h-9 text-sm">
-                    <SelectValue placeholder="Select interest" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover">
-                    <SelectItem value="AI">AI</SelectItem>
-                    <SelectItem value="Data Science">Data Science</SelectItem>
-                    <SelectItem value="Cybersecurity">Cybersecurity</SelectItem>
-                    <SelectItem value="Software Engineering">Software Engineering</SelectItem>
-                    <SelectItem value="DevOps">DevOps</SelectItem>
-                    <SelectItem value="General IT">General IT</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label className="text-primary-foreground/80 text-xs">
+                  Career Interest
+                </Label>
+                <Controller
+                  name="careerInterest"
+                  control={control}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger
+                        className={`bg-white/20 border-white/30 text-primary-foreground h-9 text-sm ${errors.careerInterest ? "border-red-500" : ""
+                          }`}
+                      >
+                        <SelectValue placeholder="Select interest" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover">
+                        <SelectItem value="AI">AI</SelectItem>
+                        <SelectItem value="Data Science">Data Science</SelectItem>
+                        <SelectItem value="Cybersecurity">Cybersecurity</SelectItem>
+                        <SelectItem value="Software Engineering">Software Engineering</SelectItem>
+                        <SelectItem value="DevOps">DevOps</SelectItem>
+                        <SelectItem value="General IT">General IT</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.careerInterest && (
+                  <p className="text-red-400 text-[10px] mt-0.5 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {errors.careerInterest.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-1">
-                <Label className="text-primary-foreground/80 text-xs">Strong Subjects</Label>
+                <Label className="text-primary-foreground/80 text-xs">
+                  Strong Subjects
+                </Label>
                 <Input
                   placeholder="e.g. Math, OOP"
-                  value={strongSubjects}
-                  onChange={(e) => setStrongSubjects(e.target.value)}
-                  className="bg-white/20 border-white/30 text-primary-foreground placeholder:text-primary-foreground/40 h-9 text-sm"
-                  required
+                  {...register("strongSubjects")}
+                  className={`bg-white/20 border-white/30 text-primary-foreground placeholder:text-primary-foreground/40 h-9 text-sm ${errors.strongSubjects ? "border-red-500" : ""
+                    }`}
                 />
+                {errors.strongSubjects && (
+                  <p className="text-red-400 text-[10px] mt-0.5 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {errors.strongSubjects.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-1">
-                <Label className="text-primary-foreground/80 text-xs">Weak Subjects</Label>
+                <Label className="text-primary-foreground/80 text-xs">
+                  Weak Subjects
+                </Label>
                 <Input
                   placeholder="e.g. Statistics"
-                  value={weakSubjects}
-                  onChange={(e) => setWeakSubjects(e.target.value)}
-                  className="bg-white/20 border-white/30 text-primary-foreground placeholder:text-primary-foreground/40 h-9 text-sm"
-                  required
+                  {...register("weakSubjects")}
+                  className={`bg-white/20 border-white/30 text-primary-foreground placeholder:text-primary-foreground/40 h-9 text-sm ${errors.weakSubjects ? "border-red-500" : ""
+                    }`}
                 />
+                {errors.weakSubjects && (
+                  <p className="text-red-400 text-[10px] mt-0.5 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {errors.weakSubjects.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-1">
-                <Label className="text-primary-foreground/80 text-xs">Preferred Difficulty</Label>
-                <Select value={difficulty} onValueChange={setDifficulty} required>
-                  <SelectTrigger className="bg-white/20 border-white/30 text-primary-foreground h-9 text-sm">
-                    <SelectValue placeholder="Select level" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover">
-                    <SelectItem value="Low">Low</SelectItem>
-                    <SelectItem value="Moderate">Moderate</SelectItem>
-                    <SelectItem value="High">High</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label className="text-primary-foreground/80 text-xs">
+                  Preferred Difficulty
+                </Label>
+                <Controller
+                  name="difficulty"
+                  control={control}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger
+                        className={`bg-white/20 border-white/30 text-primary-foreground h-9 text-sm ${errors.difficulty ? "border-red-500" : ""
+                          }`}
+                      >
+                        <SelectValue placeholder="Select level" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover">
+                        <SelectItem value="Low">Low</SelectItem>
+                        <SelectItem value="Moderate">Moderate</SelectItem>
+                        <SelectItem value="High">High</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.difficulty && (
+                  <p className="text-red-400 text-[10px] mt-0.5 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {errors.difficulty.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-1">
-                <Label className="text-primary-foreground/80 text-xs">Preferred Output Language</Label>
-                <Select value={language} onValueChange={setLanguage} required>
-                  <SelectTrigger className="bg-white/20 border-white/30 text-primary-foreground h-9 text-sm">
-                    <SelectValue placeholder="Select language" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover">
-                    <SelectItem value="English">English</SelectItem>
-                    <SelectItem value="Sinhala">Sinhala</SelectItem>
-                    <SelectItem value="Tamil">Tamil</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label className="text-primary-foreground/80 text-xs">
+                  Preferred Output Language
+                </Label>
+                <Controller
+                  name="language"
+                  control={control}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger
+                        className={`bg-white/20 border-white/30 text-primary-foreground h-9 text-sm ${errors.language ? "border-red-500" : ""
+                          }`}
+                      >
+                        <SelectValue placeholder="Select language" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover">
+                        <SelectItem value="English">English</SelectItem>
+                        <SelectItem value="Sinhala">Sinhala</SelectItem>
+                        <SelectItem value="Tamil">Tamil</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.language && (
+                  <p className="text-red-400 text-[10px] mt-0.5 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {errors.language.message}
+                  </p>
+                )}
               </div>
             </div>
 
